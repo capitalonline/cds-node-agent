@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: cds-node-agent
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: cds-node-agent
+  template:
+    metadata:
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ""
+      labels:
+        app: cds-node-agent
+    spec:
+      containers:
+        - image: registry-bj.capitalonline.net/cck/cds-node-agent:v1.0.0
+          imagePullPolicy: Always
+          securityContext:
+            privileged: true
+          name: cds-node-agent
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          volumeMounts:
+            - mountPath: /proc
+              name: proc
+            - mountPath: /etc
+              name: etc
+            - mountPath: /run/systemd
+              name: run-systemd
+            - mountPath: /usr/bin/systemctl
+              name: systemctl
+            - mountPath: /usr/lib
+              name: usr-lib
+            - mountPath: /var/lib/kubelet
+              name: var-lib-kubelet
+      dnsPolicy: Default
+      hostNetwork: true
+      hostPID: true
+      hostIPC: true
+      restartPolicy: Always
+      serviceAccountName: cds-node-agent
+      tolerations:
+        - key: CriticalAddonsOnly
+          operator: Exists
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/master
+          operator: Exists
+        - effect: NoSchedule
+          key: node-role.cck.net/infra
+      volumes:
+      - name: run-systemd
+        hostPath:
+          path: /run/systemd
+          type: Directory
+      - name: proc
+        hostPath:
+          path: /proc
+          type: Directory
+      - name: etc
+        hostPath:
+          path: /etc
+          type: Directory
+      - name: systemctl
+        hostPath:
+          path: /usr/bin/systemctl
+          type: File
+      - name: usr-lib
+        hostPath:
+          path: /usr/lib
+          type: Directory
+      - name: var-lib-kubelet
+        hostPath:
+          path: /var/lib/kubelet
+          type: Directory
